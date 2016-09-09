@@ -1,0 +1,21 @@
+galaxy_info:
+  author: Aleksey Chirkin
+  description: dockerized postgresql service
+
+  license: license (GPLv2, CC-BY, etc)
+
+  min_ansible_version: 2.1.1
+
+  platforms:
+    - name: Ubuntu
+      versions:
+       - vivid
+       - wily
+       - xenial
+    - name: GenericLinux
+      versions:
+        - any
+
+  galaxy_tags: [postgresql, docker]
+
+dependencies: []

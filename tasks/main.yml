@@ -1,0 +1,117 @@
+---
+- name: сreate data folder
+  file:
+    dest="{{postgres_data_folder}}"
+    mode="0700"
+    owner="{{postgres_uid}}"
+    state=directory
+
+- name: read data folder
+  find: path="{{postgres_data_folder}}"
+  register: _postgres_data_folder
+
+- name: find PG_VERSION file
+  stat: path="{{postgres_data_folder}}/PG_VERSION"
+  register: _postgres_cluster_pg_version
+
+- name: check PG_VERSION file
+  fail: msg="data folder is not empty, but PG_VERSION file missing"
+  when: _postgres_data_folder.files|length != 0 and not _postgres_cluster_pg_version.stat.exists
+
+- name: check cluster exists
+  fail: msg="initialized cluster needed in postgres standby mode"
+  when: _postgres_data_folder.files|length == 0 and postgres_standby_mode
+
+# Initialize database cluster if not yet initialized.
+# Docker container can initialize cluster, but it is better to make a more
+# explicit here in temporary container.
+- name: initialize new primary postgres cluster
+  docker_container:
+    name: postgres_initialize
+    image: "{{postgres_docker_image}}"
+    volumes:
+      - "{{postgres_data_folder}}:/mnt/data"
+    env:
+      PGDATA: "/mnt/data"
+      POSTGRES_PASSWORD: "{{postgres_password}}"
+    pull: true
+    state: started
+    command: "gosu postgres initdb"
+    interactive: true
+    detach: false
+  when: not _postgres_cluster_pg_version.stat.exists and not postgres_standby_mode
+
+- name: remove postgres initialization contatiner
+  docker_container:
+    name: postgres_initialize
+    image: "{{postgres_docker_image}}"
+    state: absent
+
+- name: check that postgres cluster initialized
+  stat: path="{{postgres_data_folder}}/PG_VERSION"
+  register: _postgres_cluster
+
+- assert:
+    that: _postgres_cluster.stat.exists
+
+- name: create postgresql.conf
+  template:
+    src=postgresql.conf.j2
+    dest="{{postgres_data_folder}}/postgresql.conf"
+  notify: plan to restart
+
+- name: create pg_hba.conf
+  template:
+    src: pg_hba.conf.j2
+    dest: "{{postgres_data_folder}}/pg_hba.conf"
+  notify: plan to restart
+
+- name: create recovery.conf
+  template:
+    src: database/recovery.conf.j2
+    dest: "{{postgres_data_folder}}/recovery.conf"
+  when: postgres_standby_mode
+  notify: plan to restart
+
+- name: remove recovery.conf
+  file:
+    path: "{{postgres_data_folder}}/recovery.conf"
+    state: absent
+  when: not postgres_standby_mode
+  notify: plan to restart
+
+- name: generate postgres server default self-signed certificate
+  shell: creates={{postgres_data_folder}}/default.crt
+    openssl req
+      -x509
+      -nodes
+      -days 3650
+      -subj '/C=CA/ST=QC/L=Montreal/O=Company Name/CN={{inventory_hostname}}'
+      -newkey rsa:1024
+      -keyout {{postgres_data_folder}}/default.key
+      -out {{postgres_data_folder}}/default.crt &&
+    chmod 600 {{postgres_data_folder}}/default.key {{postgres_data_folder}}/default.crt &&
+    chown 999 {{postgres_data_folder}}/default.key {{postgres_data_folder}}/default.crt
+  notify: plan to restart
+
+- meta: flush_handlers
+
+- name: start database container
+  docker_container:
+    name: "{{postgres_container_name}}"
+    image: "{{postgres_docker_image}}"
+    volumes:
+      - "{{postgres_data_folder}}:/mnt/data"
+    env:
+      PGDATA: /mnt/data
+    ports:
+      - "{{postgres_bind_ip}}:5432:5432"
+    pull: "{{_postgres_restart | default(false)}}"
+    restart: "{{_postgres_restart | default(false)}}"
+    restart_policy: always
+    restart_retries: 3
+    command: "gosu postgres postgres"
+    state: started
+
+- assert:
+    that: ansible_docker_container["State"]["Status"] == 'running'

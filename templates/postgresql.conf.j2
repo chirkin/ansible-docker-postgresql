@@ -1,0 +1,205 @@
+# -----------------------------
+# PostgreSQL configuration file
+# -----------------------------
+
+#------------------------------------------------------------------------------
+# FILE LOCATIONS
+#------------------------------------------------------------------------------
+
+# The default values of these variables are driven from the -D command-line
+# option or PGDATA environment variable, represented here as ConfigDir.
+
+#data_directory = 'ConfigDir'  		# use data in another directory
+       					# (change requires restart)
+#hba_file = 'ConfigDir/pg_hba.conf'    	# host-based authentication file
+       					# (change requires restart)
+#ident_file = 'ConfigDir/pg_ident.conf'	# ident configuration file
+       					# (change requires restart)
+
+# If external_pid_file is not explicitly set, no extra PID file is written.
+#external_pid_file = ''			# write an extra PID file
+       					# (change requires restart)
+
+
+#------------------------------------------------------------------------------
+# CONNECTIONS AND AUTHENTICATION
+#------------------------------------------------------------------------------
+
+# - Connection Settings -
+
+listen_addresses = '{{postgres_conf_listen_address}}'
+port = {{postgres_conf_port}}
+max_connections = {{postgres_max_connections}}
+
+ssl = on
+ssl_ciphers = '{{postgres_ssl_ciphers}}'
+ssl_prefer_server_ciphers = {{postgres_ssl_prefer_server_ciphers}}
+ssl_cert_file = '{{postgres_ssl_cert_file}}'
+ssl_key_file = '{{postgres_ssl_key_file}}'
+password_encryption = {{postgres_password_encryption}}
+
+#------------------------------------------------------------------------------
+# RESOURCE USAGE (except WAL)
+#------------------------------------------------------------------------------
+
+# - Memory -
+
+shared_buffers = {{postgres_shared_buffers}}
+huge_pages = {{postgres_huge_pages}}
+temp_buffers = {{postgres_temp_buffers}}
+max_prepared_transactions = {{postgres_max_prepared_transactions}}
+
+work_mem = {{postgres_work_mem}}
+maintenance_work_mem = {{postgres_maintenance_work_mem}}
+
+# - Kernel Resource Usage -
+
+shared_preload_libraries = 'pg_stat_statements'
+pg_stat_statements.max = 10000
+pg_stat_statements.track = all
+
+#------------------------------------------------------------------------------
+# WRITE AHEAD LOG
+#------------------------------------------------------------------------------
+
+# - Settings -
+
+wal_level = hot_standby
+fsync = on
+synchronous_commit = on
+wal_sync_method = fsync
+commit_delay = 10
+commit_siblings = 5
+
+# - Checkpoints -
+
+checkpoint_timeout = 5min
+max_wal_size = 1GB
+min_wal_size = 80MB
+checkpoint_completion_target = 0.5
+checkpoint_warning = 30s
+
+# - Archiving -
+
+archive_mode = off
+archive_command = 'test ! -f /mnt/archive/%f && gzip < %p > /mnt/archive/%f && chmod 640 /mnt/archive/%f'
+
+#------------------------------------------------------------------------------
+# REPLICATION
+#------------------------------------------------------------------------------
+
+# - Sending Server(s) -
+
+max_wal_senders = 5
+wal_keep_segments = 100
+
+# - Master Server -
+
+# - Standby Servers -
+
+hot_standby = on
+
+#------------------------------------------------------------------------------
+# QUERY TUNING
+#------------------------------------------------------------------------------
+
+# - Planner Method Configuration -
+
+# - Planner Cost Constants -
+
+random_page_cost = 2.0
+cpu_tuple_cost = 0.001
+cpu_index_tuple_cost = 0.0005
+effective_cache_size = 6GB
+
+# - Genetic Query Optimizer -
+
+# - Other Planner Options -
+
+#------------------------------------------------------------------------------
+# ERROR REPORTING AND LOGGING
+#------------------------------------------------------------------------------
+
+# - Where to Log -
+
+log_destination = 'stderr'
+
+logging_collector = off
+
+#log_directory = '/var/log/postgresql'
+#log_filename='postgresql.log'
+
+#log_file_mode = 0644
+#log_truncate_on_rotation = on
+#log_rotation_age = 100d
+#log_rotation_size = 10MB
+
+# - When to Log -
+
+client_min_messages = error
+log_min_messages = error
+
+# - What to Log -
+
+log_statement = 'none'
+log_timezone = 'W-SU'
+
+#------------------------------------------------------------------------------
+# RUNTIME STATISTICS
+#------------------------------------------------------------------------------
+
+# - Query/Index Statistics Collector -
+
+# - Statistics Monitoring -
+
+#------------------------------------------------------------------------------
+# AUTOVACUUM PARAMETERS
+#------------------------------------------------------------------------------
+
+autovacuum = on
+autovacuum_vacuum_threshold = 1800
+autovacuum_analyze_threshold = 900
+
+#------------------------------------------------------------------------------
+# CLIENT CONNECTION DEFAULTS
+#------------------------------------------------------------------------------
+
+# - Statement Behavior -
+
+# - Locale and Formatting -
+
+datestyle = 'iso, dmy'
+timezone = 'GMT-3'
+lc_messages = 'en_US.UTF-8'
+lc_monetary = 'ru_RU.UTF-8'
+lc_numeric = 'ru_RU.UTF-8'
+lc_time = 'ru_RU.UTF-8'
+
+default_text_search_config = 'pg_catalog.english'
+
+# - Other Defaults -
+
+#------------------------------------------------------------------------------
+# LOCK MANAGEMENT
+#------------------------------------------------------------------------------
+
+#------------------------------------------------------------------------------
+# VERSION/PLATFORM COMPATIBILITY
+#------------------------------------------------------------------------------
+
+# - Previous PostgreSQL Versions -
+
+# - Other Platforms and Clients -
+
+#------------------------------------------------------------------------------
+# ERROR HANDLING
+#------------------------------------------------------------------------------
+
+
+#------------------------------------------------------------------------------
+# CONFIG FILE INCLUDES
+#------------------------------------------------------------------------------
+
+#------------------------------------------------------------------------------
+# CUSTOMIZED OPTIONS
+#------------------------------------------------------------------------------

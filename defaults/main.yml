@@ -1,0 +1,40 @@
+---
+postgres_data_folder: '/srv/postgres_data'
+postgres_docker_image: a4irkin/postgres:9.5
+
+postgres_container_name: postgres
+postgres_password: ''
+postgres_bind_ip: '127.0.0.1'
+
+postgres_standby_mode: false
+
+postgres_uid: 999
+
+# -----------------------------------------------------------------------------
+# postgres.conf
+# -----------------------------------------------------------------------------
+
+# - Connection Settings -
+
+postgres_conf_listen_address: '*'
+postgres_conf_port: 5432
+postgres_max_connections: 10
+
+postgres_ssl: on
+postgres_ssl_ciphers: 'HIGH:MEDIUM:+3DES:!aNULL'
+postgres_ssl_prefer_server_ciphers: on
+postgres_ssl_cert_file: 'default.crt'
+postgres_ssl_key_file: 'default.key'
+postgres_password_encryption: on
+
+# - Memory -
+
+postgres_shared_buffers: 32MB
+postgres_huge_pages: try # on, off, or try
+postgres_temp_buffers: 16MB
+postgres_max_prepared_transactions: 10
+
+postgres_work_mem: 64MB
+postgres_maintenance_work_mem: 64MB
+
+# - Kernel Resource Usage -

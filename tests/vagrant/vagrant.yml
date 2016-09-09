@@ -1,0 +1,24 @@
+---
+- hosts: primary
+  become: true
+  roles:
+    - { role: "ansible-docker-postgresql"
+      }
+
+- hosts: primary
+  tasks:
+    - name: test postgres connection
+      shell:
+        docker exec postgres psql -U postgres -qt -c "select 'ok'"
+      changed_when: false
+
+# TODO: replicate cluster from primary and run standby
+#
+# - hosts: standby
+#   become: true
+#   roles:
+#     - { role: "ansible-docker-postgresql",
+#         postgres_primary: "primary",
+#         postgres_primary_ip: "10.44.32.11",
+#         postgres_standby_mode: true
+#       }

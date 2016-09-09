@@ -1,0 +1,4 @@
+---
+- name: plan to restart
+  set_fact:
+    _postgres_restart: true
